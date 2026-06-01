@@ -1,14 +1,6 @@
-// The results page at /checklist.
-//
-// This is a server component. It reads the answers from the URL query string,
-// validates them, generates the checklist from mock data, and hands the
-// result to the interactive <ChecklistView> client component.
-//
-// In Next.js 15 the `searchParams` prop is a Promise, so the component is
-// async and we `await` it.
-
 import Link from "next/link";
 import ChecklistView from "@/components/ChecklistView";
+import { getCatalog } from "@/lib/catalog/getCatalog";
 import { parseAnswers } from "@/lib/params";
 import { generateChecklist } from "@/lib/recommendations";
 
@@ -22,8 +14,6 @@ export default async function ChecklistPage({
   const raw = await searchParams;
   const answers = parseAnswers(raw);
 
-  // If the URL is missing valid answers (e.g. someone visited /checklist
-  // directly), show a friendly prompt to fill out the form.
   if (!answers) {
     return (
       <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-6 text-center">
@@ -44,12 +34,16 @@ export default async function ChecklistPage({
     );
   }
 
-  // Generate the categories on the server from the mock data.
-  const categories = generateChecklist(answers);
+  const { products, source } = await getCatalog();
+  const categories = generateChecklist(answers, products);
 
   return (
     <main>
-      <ChecklistView answers={answers} categories={categories} />
+      <ChecklistView
+        answers={answers}
+        categories={categories}
+        catalogSource={source}
+      />
     </main>
   );
 }

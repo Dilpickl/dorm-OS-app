@@ -1,21 +1,17 @@
 "use client";
 
-// The interactive heart of the results page.
-//
-// This client component owns all the per-item state for the checklist:
-//   - which price tier each item uses
-//   - any custom price the student typed
-//   - whether each item is "already owned"
-//   - which items have been removed
-//
-// Everything else (the summary total, the category cards, the exports) is
-// derived from this state, so the estimated total at the top always stays in
-// sync the moment anything changes.
-
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { effectivePrice, priceTierLabel } from "@/lib/budget";
 import { climateLabel, dormLabel } from "@/lib/options";
+import {
+  clearPersistedChecklist,
+  formatSavedTime,
+  loadPersistedChecklist,
+  savePersistedChecklist,
+  usesCloudPersistence,
+} from "@/lib/storage/checklistPersistence";
+import type { CatalogSource } from "@/lib/catalog/getCatalog";
 import type {
   ChecklistCategory,
   ItemSelection,
@@ -29,10 +25,9 @@ import ExportButtons, { type ExportCategory } from "./ExportButtons";
 interface ChecklistViewProps {
   answers: OnboardingAnswers;
   categories: ChecklistCategory[];
+  catalogSource?: CatalogSource;
 }
 
-// Build the starting selection for every item: its default tier, no custom
-// price, and not yet owned.
 function buildInitialSelections(
   categories: ChecklistCategory[]
 ): Record<string, ItemSelection> {
@@ -49,19 +44,71 @@ function buildInitialSelections(
   return selections;
 }
 
+function mergeSelections(
+  categories: ChecklistCategory[],
+  saved: Record<string, ItemSelection>
+): Record<string, ItemSelection> {
+  const base = buildInitialSelections(categories);
+  for (const category of categories) {
+    for (const item of category.items) {
+      const prior = saved[item.id];
+      if (prior) {
+        base[item.id] = {
+          tier: prior.tier,
+          customPrice: prior.customPrice,
+          owned: prior.owned,
+        };
+      }
+    }
+  }
+  return base;
+}
+
 export default function ChecklistView({
   answers,
   categories,
+  catalogSource = "mock",
 }: ChecklistViewProps) {
-  // Lazy initializer (the function runs only on the first render).
   const [selections, setSelections] = useState<Record<string, ItemSelection>>(
     () => buildInitialSelections(categories)
   );
   const [removed, setRemoved] = useState<Set<string>>(new Set());
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const hydrated = useRef(false);
 
-  // ----- Update handlers -----
+  // Restore saved progress once on mount (Supabase or localStorage).
+  useEffect(() => {
+    let cancelled = false;
 
-  // Switching tiers clears any custom price so the tier price takes effect.
+    (async () => {
+      const saved = await loadPersistedChecklist(answers);
+      if (cancelled) return;
+      if (saved) {
+        setSelections(mergeSelections(categories, saved.selections));
+        setRemoved(new Set(saved.removed));
+        setLastSavedAt(saved.updatedAt);
+      }
+      hydrated.current = true;
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [answers, categories]);
+
+  // Auto-save after hydration when selections or removed change.
+  useEffect(() => {
+    if (!hydrated.current) return;
+
+    const timer = window.setTimeout(() => {
+      void savePersistedChecklist(answers, selections, removed).then(
+        setLastSavedAt
+      );
+    }, 400);
+
+    return () => window.clearTimeout(timer);
+  }, [answers, selections, removed]);
+
   function handleTierChange(id: string, tier: PriceTier) {
     setSelections((current) => ({
       ...current,
@@ -91,10 +138,14 @@ export default function ChecklistView({
     setRemoved(new Set());
   }
 
-  // ----- Derived data (recomputed whenever state changes) -----
+  function handleClearSaved() {
+    void clearPersistedChecklist(answers).then(() => {
+      setSelections(buildInitialSelections(categories));
+      setRemoved(new Set());
+      setLastSavedAt(null);
+    });
+  }
 
-  // Categories with removed items filtered out, and now-empty categories
-  // dropped entirely.
   const visibleCategories = useMemo(
     () =>
       categories
@@ -122,7 +173,6 @@ export default function ChecklistView({
 
   const removedCount = removed.size;
 
-  // Display-ready data for the export functions.
   const exportCategories: ExportCategory[] = useMemo(
     () =>
       visibleCategories.map((category) => ({
@@ -142,7 +192,6 @@ export default function ChecklistView({
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">
-      {/* Header */}
       <div className="mb-8">
         <Link
           href="/"
@@ -157,9 +206,31 @@ export default function ChecklistView({
           Personalized for <span className="font-medium">{answers.school}</span>{" "}
           - {climateLabel(answers.climate)}, {dormLabel(answers.dormType)}.
         </p>
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
+            Catalog:{" "}
+            {catalogSource === "supabase"
+              ? "Supabase"
+              : catalogSource === "api"
+                ? "live API"
+                : "built-in mock"}
+          </span>
+          {lastSavedAt !== null && (
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-800">
+              Saved {usesCloudPersistence() ? "to Supabase" : "locally"} ·{" "}
+              {formatSavedTime(lastSavedAt)}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={handleClearSaved}
+            className="text-slate-400 underline-offset-2 hover:text-red-600 hover:underline"
+          >
+            Reset saved progress
+          </button>
+        </div>
       </div>
 
-      {/* Summary + exports */}
       <div className="mb-8 space-y-4">
         <CostSummary
           estimatedTotal={estimatedTotal}
@@ -188,7 +259,6 @@ export default function ChecklistView({
         </div>
       </div>
 
-      {/* Category cards */}
       {visibleItems.length === 0 ? (
         <p className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500">
           You&apos;ve removed every item.{" "}

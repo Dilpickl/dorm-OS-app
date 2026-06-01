@@ -1,51 +1,89 @@
-// The recommendation engine.
-//
-// This file takes the student's onboarding answers and turns the flat list
-// of mock products into a set of checklist categories tailored to them.
-//
-// It is intentionally written as plain, well-commented functions so it is
-// easy to read and to extend later (this is the one place you'd plug in a
-// real recommendation API).
+// Recommendation engine — filters, scores, and ranks catalog products.
 
+import type { CatalogProduct } from "./catalog/types";
 import { deriveTiers, defaultTierForBudget } from "./budget";
-import { mockProducts, type MockProduct } from "./mockData";
 import type {
   ChecklistCategory,
   ChecklistItem,
+  DormType,
   OnboardingAnswers,
 } from "./types";
 
-// Decide whether a single product should be recommended for these answers.
-// Each `if` below is one rule. If any rule fails, the product is skipped.
-//
-// Note: budget no longer filters items. Instead, every relevant item is shown
-// and the student controls cost through per-item price tiers, the "already
-// own" toggle, and removing items on the checklist page.
-function shouldRecommend(product: MockProduct, answers: OnboardingAnswers): boolean {
-  // Rule 1: Climate. If the item is climate-specific, the student's climate
-  // must be in its list.
+const TRADITIONAL_DORMS: DormType[] = [
+  "traditional-double",
+  "traditional-single",
+];
+const KITCHEN_DORMS: DormType[] = ["suite", "apartment", "off-campus"];
+
+// ----- Hard filters (product is excluded if any rule fails) -----
+
+function passesHardFilters(
+  product: CatalogProduct,
+  answers: OnboardingAnswers
+): boolean {
   if (product.climates && !product.climates.includes(answers.climate)) {
     return false;
   }
-
-  // Rule 2: Dorm type. If the item is dorm-type-specific, it must match.
   if (product.dormTypes && !product.dormTypes.includes(answers.dormType)) {
     return false;
   }
-
-  // Rule 3: Hobby. Hobby items only appear if the student picked that hobby.
   if (product.hobby && !answers.hobbies.includes(product.hobby)) {
     return false;
   }
-
-  // Passed every rule, so recommend it.
   return true;
 }
 
-// Convert a MockProduct (which has a base price + tags) into a ChecklistItem
-// (with the full set of tier prices and a preselected default tier).
+// ----- Soft scoring (higher = more relevant, sort within category) -----
+
+function scoreProduct(
+  product: CatalogProduct,
+  answers: OnboardingAnswers
+): number {
+  let score = product.priority ?? 50;
+
+  if (product.essential) score += 40;
+
+  if (product.climates?.includes(answers.climate)) score += 15;
+  if (product.dormTypes?.includes(answers.dormType)) score += 12;
+  if (product.hobby && answers.hobbies.includes(product.hobby)) score += 20;
+
+  // Traditional halls: emphasize storage & shared-bath essentials.
+  if (TRADITIONAL_DORMS.includes(answers.dormType)) {
+    if (product.category === "Storage") score += 18;
+    if (product.category === "Bathroom") score += 10;
+    if (product.category === "Kitchen" && !product.essential) score -= 15;
+  }
+
+  // Suite / apartment / off-campus: boost kitchen setup.
+  if (KITCHEN_DORMS.includes(answers.dormType) && product.category === "Kitchen") {
+    score += 16;
+  }
+
+  if (answers.dormType === "off-campus") {
+    if (product.category === "Kitchen") score += 10;
+    if (product.id === "cookware") score += 12;
+  }
+
+  // Variable climate: slight boost for items tagged for multiple climates.
+  if (answers.climate === "variable" && product.climates && product.climates.length >= 2) {
+    score += 8;
+  }
+
+  // Four-season: boost both heating and cooling accessories slightly.
+  if (answers.climate === "four-season") {
+    if (product.id === "fan" || product.id === "space-heater") score += 6;
+  }
+
+  // More hobbies selected → hobby gear is more valuable.
+  if (product.hobby && answers.hobbies.length >= 2) {
+    score += 5;
+  }
+
+  return score;
+}
+
 function toChecklistItem(
-  product: MockProduct,
+  product: CatalogProduct,
   answers: OnboardingAnswers
 ): ChecklistItem {
   return {
@@ -58,8 +96,6 @@ function toChecklistItem(
   };
 }
 
-// The order categories appear in on the page. Anything not listed here
-// (e.g. hobby categories) is appended afterwards in the order discovered.
 const CATEGORY_ORDER = [
   "Bedding",
   "Bathroom",
@@ -71,23 +107,25 @@ const CATEGORY_ORDER = [
   "Decor",
 ];
 
-// Main entry point: turn answers into an ordered list of categories.
-export function generateChecklist(answers: OnboardingAnswers): ChecklistCategory[] {
-  // 1) Keep only the products that match the student's answers.
-  const recommended = mockProducts.filter((product) =>
-    shouldRecommend(product, answers)
-  );
+export function generateChecklist(
+  answers: OnboardingAnswers,
+  catalog: CatalogProduct[]
+): ChecklistCategory[] {
+  const scored = catalog
+    .filter((product) => passesHardFilters(product, answers))
+    .map((product) => ({
+      product,
+      score: scoreProduct(product, answers),
+    }))
+    .sort((a, b) => b.score - a.score);
 
-  // 2) Group the surviving products by their category name.
   const groups = new Map<string, ChecklistItem[]>();
-  for (const product of recommended) {
+  for (const { product } of scored) {
     const items = groups.get(product.category) ?? [];
     items.push(toChecklistItem(product, answers));
     groups.set(product.category, items);
   }
 
-  // 3) Sort the category names: known categories first (in CATEGORY_ORDER),
-  //    then any remaining categories (like hobbies) alphabetically.
   const categoryNames = Array.from(groups.keys());
   categoryNames.sort((a, b) => {
     const indexA = CATEGORY_ORDER.indexOf(a);
@@ -98,7 +136,6 @@ export function generateChecklist(answers: OnboardingAnswers): ChecklistCategory
     return a.localeCompare(b);
   });
 
-  // 4) Build the final array of categories.
   return categoryNames.map((name) => ({
     name,
     items: groups.get(name) ?? [],
