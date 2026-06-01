@@ -1,18 +1,5 @@
 "use client";
 
-// The budget slider used in the onboarding form.
-//
-// It is a "controlled" component: the parent form owns the numeric value and
-// passes it in, and we report changes back through `onChange`. The slider and
-// the editable number box stay in sync because they both read/write that one
-// value.
-//
-// Features required by the product spec:
-//   - range $100 -> $2000 (shown as "$2000+" at the top)
-//   - default handled by the parent (we just display whatever we're given)
-//   - the value is clickable / directly editable by keyboard
-//   - a live "tier" label below the slider
-
 import { useEffect, useState } from "react";
 import {
   BUDGET_MAX,
@@ -22,6 +9,7 @@ import {
   clampBudget,
   formatBudget,
 } from "@/lib/budget";
+import { labelClass } from "@/lib/design/forms";
 
 interface BudgetSliderProps {
   value: number;
@@ -29,12 +17,8 @@ interface BudgetSliderProps {
 }
 
 export default function BudgetSlider({ value, onChange }: BudgetSliderProps) {
-  // The editable text box keeps its own draft string so the user can type
-  // freely (e.g. clear it, type "1500") without us clamping mid-keystroke.
-  // We commit the clamped number to the parent when they blur or press Enter.
   const [draft, setDraft] = useState(String(value));
 
-  // Keep the draft in sync when the value changes from the slider.
   useEffect(() => {
     setDraft(String(value));
   }, [value]);
@@ -48,11 +32,10 @@ export default function BudgetSlider({ value, onChange }: BudgetSliderProps) {
   return (
     <div>
       <div className="flex items-baseline justify-between">
-        <span className="block font-medium text-slate-800">Budget</span>
+        <span className={labelClass}>Budget</span>
 
-        {/* Clickable / editable value display. */}
-        <div className="flex items-baseline gap-1 text-indigo-600">
-          <span className="text-2xl font-bold">$</span>
+        <div className="flex items-baseline gap-1 text-accent">
+          <span className="font-heading text-2xl font-bold">$</span>
           <input
             type="number"
             inputMode="numeric"
@@ -69,15 +52,14 @@ export default function BudgetSlider({ value, onChange }: BudgetSliderProps) {
               }
             }}
             aria-label="Budget amount in dollars"
-            className="w-24 rounded-md border border-transparent bg-transparent text-right text-2xl font-bold text-indigo-600 hover:border-slate-200 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            className="w-24 rounded-md border-2 border-transparent bg-transparent text-right font-heading text-2xl font-bold text-accent hover:border-border focus:border-accent focus:bg-input focus:outline-none focus:shadow-pop-accent"
           />
           {value >= BUDGET_MAX && (
-            <span className="text-2xl font-bold">+</span>
+            <span className="font-heading text-2xl font-bold">+</span>
           )}
         </div>
       </div>
 
-      {/* The slider itself. */}
       <input
         type="range"
         min={BUDGET_MIN}
@@ -86,18 +68,17 @@ export default function BudgetSlider({ value, onChange }: BudgetSliderProps) {
         value={value}
         onChange={(e) => onChange(clampBudget(Number(e.target.value)))}
         aria-label="Budget slider"
-        className="mt-4 w-full cursor-pointer accent-indigo-600"
+        className="mt-4 h-2 w-full cursor-pointer accent-accent"
       />
 
-      <div className="mt-1 flex justify-between text-xs text-slate-400">
+      <div className="mt-1 flex justify-between font-body text-xs text-muted-foreground">
         <span>{formatBudget(BUDGET_MIN)}</span>
         <span>{formatBudget(BUDGET_MAX)}</span>
       </div>
 
-      {/* Live tier label. */}
-      <p className="mt-3 text-sm text-slate-600">
+      <p className="mt-3 font-body text-sm text-muted-foreground">
         Tier:{" "}
-        <span className="font-semibold text-slate-900">
+        <span className="font-semibold text-foreground">
           {budgetTierLabel(value)}
         </span>
       </p>

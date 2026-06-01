@@ -1,17 +1,14 @@
 "use client";
 
-// The onboarding form.
-//
-// "use client" tells Next.js this component runs in the browser, which we
-// need because it uses React state (useState) and navigation (useRouter).
-//
-// When the student submits, we package their answers into a query string
-// and navigate to /checklist, where the list is generated.
-
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import BudgetSlider from "@/components/BudgetSlider";
+import { Button } from "@/components/ui/Button";
+import { Panel } from "@/components/ui/Panel";
+import { SceneDecor } from "@/components/ui/SceneDecor";
 import { BUDGET_DEFAULT } from "@/lib/budget";
+import { fieldClass, labelClass, selectClass } from "@/lib/design/forms";
+import { cn } from "@/lib/cn";
 import { CLIMATE_OPTIONS, DORM_OPTIONS, HOBBY_OPTIONS } from "@/lib/options";
 import { answersToQuery } from "@/lib/params";
 import type {
@@ -25,15 +22,12 @@ import type {
 export default function OnboardingForm() {
   const router = useRouter();
 
-  // One piece of state per answer. The form is "controlled", meaning React
-  // is the single source of truth for every input's value.
   const [school, setSchool] = useState("");
   const [climate, setClimate] = useState<Climate>("four-season");
   const [budget, setBudget] = useState<number>(BUDGET_DEFAULT);
   const [dormType, setDormType] = useState<DormType>("traditional-double");
   const [hobbies, setHobbies] = useState<Hobby[]>([]);
 
-  // Add or remove a hobby when its chip is clicked.
   function toggleHobby(hobby: Hobby) {
     setHobbies((current) =>
       current.includes(hobby)
@@ -42,9 +36,6 @@ export default function OnboardingForm() {
     );
   }
 
-  // Build the checklist. `budgetOverride` lets the "I don't know" button send
-  // "unknown" instead of the slider value, so the checklist page estimates a
-  // budget from the generated items instead.
   function goToChecklist(budgetValue: Budget) {
     const answers: OnboardingAnswers = {
       school: school.trim() || "your school",
@@ -61,27 +52,23 @@ export default function OnboardingForm() {
     goToChecklist(budget);
   }
 
-  // Shared Tailwind classes for the select/input elements.
-  const fieldClasses =
-    "mt-2 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200";
-
   return (
     <section
       id="onboarding"
-      className="mx-auto max-w-2xl scroll-mt-8 px-6 py-16"
+      className="relative mx-auto max-w-2xl scroll-mt-8 px-6 py-20"
     >
-      <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xl">
-        <h2 className="text-2xl font-bold text-slate-900">
+      <SceneDecor />
+      <Panel className="relative animate-pop-in p-8">
+        <h2 className="font-heading text-2xl font-bold text-foreground">
           Tell us about your move-in
         </h2>
-        <p className="mt-2 text-slate-600">
+        <p className="mt-2 font-body text-muted-foreground">
           It only takes a minute. Everything below shapes your checklist.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-          {/* School */}
           <div>
-            <label htmlFor="school" className="block font-medium text-slate-800">
+            <label htmlFor="school" className={labelClass}>
               School
             </label>
             <input
@@ -89,21 +76,20 @@ export default function OnboardingForm() {
               type="text"
               value={school}
               onChange={(e) => setSchool(e.target.value)}
-              placeholder="e.g. University of Michigan"
-              className={fieldClasses}
+              placeholder="e.g. University of Illinois"
+              className={fieldClass}
             />
           </div>
 
-          {/* Climate */}
           <div>
-            <label htmlFor="climate" className="block font-medium text-slate-800">
+            <label htmlFor="climate" className={labelClass}>
               Local climate
             </label>
             <select
               id="climate"
               value={climate}
               onChange={(e) => setClimate(e.target.value as Climate)}
-              className={fieldClasses}
+              className={selectClass}
             >
               {CLIMATE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -113,16 +99,15 @@ export default function OnboardingForm() {
             </select>
           </div>
 
-          {/* Dorm type */}
           <div>
-            <label htmlFor="dormType" className="block font-medium text-slate-800">
+            <label htmlFor="dormType" className={labelClass}>
               Dorm type
             </label>
             <select
               id="dormType"
               value={dormType}
               onChange={(e) => setDormType(e.target.value as DormType)}
-              className={fieldClasses}
+              className={selectClass}
             >
               {DORM_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -132,27 +117,26 @@ export default function OnboardingForm() {
             </select>
           </div>
 
-          {/* Budget slider + "I don't know" */}
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+          <div className="rounded-xl border-2 border-foreground bg-muted/50 p-5 shadow-pop-sm">
             <BudgetSlider value={budget} onChange={setBudget} />
-            <div className="mt-4 flex items-center gap-3">
-              <button
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <Button
                 type="button"
+                variant="secondary"
+                className="min-h-10 px-4 py-2 text-sm"
                 onClick={() => goToChecklist("unknown")}
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-indigo-400 hover:text-indigo-600"
               >
                 I don&apos;t know
-              </button>
-              <span className="text-xs text-slate-500">
+              </Button>
+              <span className="font-body text-xs text-muted-foreground">
                 We&apos;ll build your list first and estimate a budget from it.
               </span>
             </div>
           </div>
 
-          {/* Hobbies (multi-select chips) */}
           <div>
-            <span className="block font-medium text-slate-800">Hobbies</span>
-            <p className="mt-1 text-sm text-slate-500">
+            <span className={labelClass}>Hobbies</span>
+            <p className="mt-1 font-body text-sm text-muted-foreground">
               Pick any that apply. We&apos;ll add matching gear to your list.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -164,12 +148,12 @@ export default function OnboardingForm() {
                     type="button"
                     onClick={() => toggleHobby(option.value)}
                     aria-pressed={selected}
-                    className={
-                      "rounded-full border px-4 py-1.5 text-sm font-medium transition " +
-                      (selected
-                        ? "border-indigo-600 bg-indigo-600 text-white shadow-sm"
-                        : "border-slate-300 bg-white text-slate-700 hover:border-indigo-400 hover:text-indigo-600")
-                    }
+                    className={cn(
+                      "rounded-full border-2 px-4 py-1.5 font-body text-sm font-semibold transition duration-300 ease-bounce",
+                      selected
+                        ? "border-foreground bg-accent text-accent-foreground shadow-pop-sm"
+                        : "border-border bg-card text-foreground hover:border-foreground hover:bg-tertiary/40"
+                    )}
                   >
                     {option.label}
                   </button>
@@ -178,14 +162,11 @@ export default function OnboardingForm() {
             </div>
           </div>
 
-          <button
-            type="submit"
-            className="w-full rounded-lg bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow-md transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-          >
+          <Button type="submit" showArrow className="w-full">
             Build my checklist
-          </button>
+          </Button>
         </form>
-      </div>
+      </Panel>
     </section>
   );
 }

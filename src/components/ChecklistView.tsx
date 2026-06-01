@@ -6,21 +6,33 @@ import { effectivePrice, priceTierLabel } from "@/lib/budget";
 import { climateLabel, dormLabel } from "@/lib/options";
 import {
   clearPersistedChecklist,
-  formatSavedTime,
+  formatRelativeSavedTime,
   loadPersistedChecklist,
   savePersistedChecklist,
-  usesCloudPersistence,
 } from "@/lib/storage/checklistPersistence";
 import type { CatalogSource } from "@/lib/catalog/getCatalog";
 import type {
   ChecklistCategory,
+  ChecklistItem,
   ItemSelection,
   OnboardingAnswers,
   PriceTier,
 } from "@/lib/types";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Panel } from "@/components/ui/Panel";
+import { SceneDecor } from "@/components/ui/SceneDecor";
+import { cn } from "@/lib/cn";
 import ChecklistCategorySection from "./ChecklistCategorySection";
 import CostSummary from "./CostSummary";
 import ExportButtons, { type ExportCategory } from "./ExportButtons";
+
+const CATEGORY_TINTS = [
+  "accent",
+  "secondary",
+  "tertiary",
+  "quaternary",
+] as const;
 
 interface ChecklistViewProps {
   answers: OnboardingAnswers;
@@ -74,9 +86,35 @@ export default function ChecklistView({
   );
   const [removed, setRemoved] = useState<Set<string>>(new Set());
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const [undoToast, setUndoToast] = useState<{ id: string; name: string } | null>(
+    null
+  );
+  const [, setRelativeTick] = useState(0);
   const hydrated = useRef(false);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Restore saved progress once on mount (Supabase or localStorage).
+  const itemById = useMemo(() => {
+    const map = new Map<string, ChecklistItem>();
+    for (const category of categories) {
+      for (const item of category.items) {
+        map.set(item.id, item);
+      }
+    }
+    return map;
+  }, [categories]);
+
+  const removedItems = useMemo(
+    () =>
+      Array.from(removed)
+        .map((id) => {
+          const item = itemById.get(id);
+          return item ? { id, name: item.name } : null;
+        })
+        .filter((entry): entry is { id: string; name: string } => entry !== null)
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [removed, itemById]
+  );
+
   useEffect(() => {
     let cancelled = false;
 
@@ -96,7 +134,6 @@ export default function ChecklistView({
     };
   }, [answers, categories]);
 
-  // Auto-save after hydration when selections or removed change.
   useEffect(() => {
     if (!hydrated.current) return;
 
@@ -108,6 +145,18 @@ export default function ChecklistView({
 
     return () => window.clearTimeout(timer);
   }, [answers, selections, removed]);
+
+  useEffect(() => {
+    if (lastSavedAt === null) return;
+    const id = window.setInterval(() => setRelativeTick((t) => t + 1), 30_000);
+    return () => window.clearInterval(id);
+  }, [lastSavedAt]);
+
+  useEffect(() => {
+    return () => {
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    };
+  }, []);
 
   function handleTierChange(id: string, tier: PriceTier) {
     setSelections((current) => ({
@@ -130,12 +179,34 @@ export default function ChecklistView({
     }));
   }
 
+  function showUndoToast(id: string, name: string) {
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    setUndoToast({ id, name });
+    undoTimerRef.current = setTimeout(() => setUndoToast(null), 8000);
+  }
+
   function handleRemove(id: string) {
+    const item = itemById.get(id);
     setRemoved((current) => new Set(current).add(id));
+    if (item) showUndoToast(id, item.name);
+  }
+
+  function handleRestoreOne(id: string) {
+    setRemoved((current) => {
+      const next = new Set(current);
+      next.delete(id);
+      return next;
+    });
+    if (undoToast?.id === id) {
+      setUndoToast(null);
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    }
   }
 
   function handleRestoreAll() {
     setRemoved(new Set());
+    setUndoToast(null);
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
   }
 
   function handleClearSaved() {
@@ -143,6 +214,7 @@ export default function ChecklistView({
       setSelections(buildInitialSelections(categories));
       setRemoved(new Set());
       setLastSavedAt(null);
+      setUndoToast(null);
     });
   }
 
@@ -171,8 +243,6 @@ export default function ChecklistView({
     (item) => selections[item.id]?.owned
   ).length;
 
-  const removedCount = removed.size;
-
   const exportCategories: ExportCategory[] = useMemo(
     () =>
       visibleCategories.map((category) => ({
@@ -191,45 +261,88 @@ export default function ChecklistView({
   );
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-12">
-      <div className="mb-8">
+    <div className="relative mx-auto max-w-3xl px-6 py-12">
+      <SceneDecor />
+      <div className="relative mb-8 animate-pop-in">
         <Link
           href="/"
-          className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
+          className="font-body text-sm font-semibold text-accent hover:underline"
         >
           &larr; Edit answers
         </Link>
-        <h1 className="mt-3 text-3xl font-bold text-slate-900">
+        <h1 className="mt-3 font-heading text-3xl font-bold text-foreground sm:text-4xl">
           Your dorm checklist
         </h1>
-        <p className="mt-2 text-slate-600">
-          Personalized for <span className="font-medium">{answers.school}</span>{" "}
-          - {climateLabel(answers.climate)}, {dormLabel(answers.dormType)}.
+        <p className="mt-2 font-body text-muted-foreground">
+          Personalized for{" "}
+          <span className="font-semibold text-foreground">{answers.school}</span>{" "}
+          · {climateLabel(answers.climate)}, {dormLabel(answers.dormType)}.
         </p>
-        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <Badge variant="muted">
             Catalog:{" "}
             {catalogSource === "supabase"
               ? "Supabase"
               : catalogSource === "api"
                 ? "live API"
                 : "built-in mock"}
-          </span>
+          </Badge>
           {lastSavedAt !== null && (
-            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-800">
-              Saved {usesCloudPersistence() ? "to Supabase" : "locally"} ·{" "}
-              {formatSavedTime(lastSavedAt)}
-            </span>
+            <Badge variant="saved">
+              All changes saved · {formatRelativeSavedTime(lastSavedAt)}
+            </Badge>
           )}
           <button
             type="button"
             onClick={handleClearSaved}
-            className="text-slate-400 underline-offset-2 hover:text-red-600 hover:underline"
+            className="font-body text-xs font-medium text-muted-foreground underline-offset-2 hover:text-secondary hover:underline"
           >
             Reset saved progress
           </button>
         </div>
       </div>
+
+      {removedItems.length > 0 && (
+        <Panel
+          className="relative mb-6 p-4"
+          aria-label="Removed items"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-heading text-sm font-bold text-foreground">
+              Removed items ({removedItems.length})
+            </h2>
+            {removedItems.length > 1 && (
+              <button
+                type="button"
+                onClick={handleRestoreAll}
+                className="font-body text-xs font-semibold text-accent hover:underline"
+              >
+                Restore all
+              </button>
+            )}
+          </div>
+          <ul className="mt-3 space-y-2">
+            {removedItems.map((item) => (
+              <li
+                key={item.id}
+                className="flex items-center justify-between gap-3 rounded-lg border-2 border-border bg-muted/60 px-3 py-2"
+              >
+                <span className="font-body text-sm text-foreground">
+                  {item.name}
+                </span>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="min-h-9 px-3 py-1 text-xs"
+                  onClick={() => handleRestoreOne(item.id)}
+                >
+                  Restore
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
 
       <div className="mb-8 space-y-4">
         <CostSummary
@@ -238,19 +351,7 @@ export default function ChecklistView({
           itemCount={visibleItems.length}
           ownedCount={ownedCount}
         />
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          {removedCount > 0 ? (
-            <button
-              type="button"
-              onClick={handleRestoreAll}
-              className="text-sm font-medium text-slate-500 hover:text-indigo-600"
-            >
-              Restore {removedCount} removed item
-              {removedCount === 1 ? "" : "s"}
-            </button>
-          ) : (
-            <span />
-          )}
+        <div className="flex flex-wrap items-center justify-end gap-3">
           <ExportButtons
             answers={answers}
             categories={exportCategories}
@@ -260,20 +361,22 @@ export default function ChecklistView({
       </div>
 
       {visibleItems.length === 0 ? (
-        <p className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500">
-          You&apos;ve removed every item.{" "}
-          <button
-            type="button"
-            onClick={handleRestoreAll}
-            className="font-medium text-indigo-600 hover:underline"
-          >
-            Restore them
-          </button>{" "}
-          to start over.
-        </p>
+        <Panel className="p-8 text-center">
+          <p className="font-body text-muted-foreground">
+            You&apos;ve removed every item.{" "}
+            <button
+              type="button"
+              onClick={handleRestoreAll}
+              className="font-semibold text-accent hover:underline"
+            >
+              Restore them
+            </button>{" "}
+            to start over.
+          </p>
+        </Panel>
       ) : (
         <div className="space-y-6">
-          {visibleCategories.map((category) => (
+          {visibleCategories.map((category, index) => (
             <ChecklistCategorySection
               key={category.name}
               category={category}
@@ -282,8 +385,29 @@ export default function ChecklistView({
               onPriceChange={handlePriceChange}
               onToggleOwned={handleToggleOwned}
               onRemove={handleRemove}
+              headerTint={CATEGORY_TINTS[index % CATEGORY_TINTS.length]}
             />
           ))}
+        </div>
+      )}
+
+      {undoToast && (
+        <div
+          className={cn(
+            "fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 flex-wrap items-center gap-3 rounded-full border-2 border-foreground bg-accent px-5 py-3 font-body text-sm font-semibold text-accent-foreground shadow-pop-lg animate-pop-in"
+          )}
+          role="status"
+        >
+          <span>
+            Removed <span className="font-bold">{undoToast.name}</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => handleRestoreOne(undoToast.id)}
+            className="rounded-full border-2 border-foreground bg-card px-3 py-1 text-xs font-bold text-foreground transition hover:bg-tertiary"
+          >
+            Undo
+          </button>
         </div>
       )}
     </div>

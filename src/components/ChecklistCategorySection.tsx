@@ -1,17 +1,11 @@
 "use client";
 
-// One category card (e.g. "Bedding") containing its list of item rows.
-//
-// Like ChecklistItemRow, this is presentational: it receives the current
-// selection for every item plus the handlers, and passes them straight
-// through to each row.
-
-import { effectivePrice } from "@/lib/budget";
 import type {
   ChecklistCategory,
   ItemSelection,
   PriceTier,
 } from "@/lib/types";
+import { cn } from "@/lib/cn";
 import ChecklistItemRow from "./ChecklistItemRow";
 
 interface ChecklistCategorySectionProps {
@@ -21,7 +15,15 @@ interface ChecklistCategorySectionProps {
   onPriceChange: (id: string, price: number | null) => void;
   onToggleOwned: (id: string) => void;
   onRemove: (id: string) => void;
+  headerTint?: "accent" | "secondary" | "tertiary" | "quaternary";
 }
+
+const headerTintClass = {
+  accent: "bg-accent text-accent-foreground",
+  secondary: "bg-secondary text-foreground",
+  tertiary: "bg-tertiary text-foreground",
+  quaternary: "bg-quaternary text-foreground",
+};
 
 export default function ChecklistCategorySection({
   category,
@@ -30,40 +32,34 @@ export default function ChecklistCategorySection({
   onPriceChange,
   onToggleOwned,
   onRemove,
+  headerTint = "accent",
 }: ChecklistCategorySectionProps) {
-  // The running cost of just this category (excludes owned items).
-  const categoryTotal = category.items.reduce((sum, item) => {
-    const selection = selections[item.id];
-    return selection ? sum + effectivePrice(item, selection) : sum;
-  }, 0);
-
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="flex items-baseline justify-between">
-        <h3 className="text-lg font-semibold text-slate-900">
-          {category.name}
-        </h3>
-        <span className="text-sm font-medium text-slate-500">
-          ${categoryTotal.toLocaleString()}
+    <section className="overflow-hidden rounded-xl border-2 border-foreground bg-card shadow-sticker">
+      <header
+        className={cn(
+          "flex items-center justify-between border-b-2 border-foreground px-6 py-3",
+          headerTintClass[headerTint]
+        )}
+      >
+        <h3 className="font-heading text-lg font-bold">{category.name}</h3>
+        <span className="rounded-full border-2 border-foreground/30 bg-white/20 px-3 py-0.5 font-body text-sm font-semibold">
+          {category.items.length} items
         </span>
-      </div>
+      </header>
 
-      <ul className="mt-2 divide-y divide-slate-100">
-        {category.items.map((item) => {
-          const selection = selections[item.id];
-          if (!selection) return null;
-          return (
-            <ChecklistItemRow
-              key={item.id}
-              item={item}
-              selection={selection}
-              onTierChange={onTierChange}
-              onPriceChange={onPriceChange}
-              onToggleOwned={onToggleOwned}
-              onRemove={onRemove}
-            />
-          );
-        })}
+      <ul className="divide-y-2 divide-border px-2">
+        {category.items.map((item) => (
+          <ChecklistItemRow
+            key={item.id}
+            item={item}
+            selection={selections[item.id]}
+            onTierChange={onTierChange}
+            onPriceChange={onPriceChange}
+            onToggleOwned={onToggleOwned}
+            onRemove={onRemove}
+          />
+        ))}
       </ul>
     </section>
   );

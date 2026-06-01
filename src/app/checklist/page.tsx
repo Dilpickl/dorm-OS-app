@@ -1,5 +1,5 @@
-import Link from "next/link";
 import ChecklistView from "@/components/ChecklistView";
+import { Button } from "@/components/ui/Button";
 import { getCatalog } from "@/lib/catalog/getCatalog";
 import { parseAnswers } from "@/lib/params";
 import { generateChecklist } from "@/lib/recommendations";
@@ -16,20 +16,17 @@ export default async function ChecklistPage({
 
   if (!answers) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-6 text-center">
-        <h1 className="text-2xl font-bold text-slate-900">
+      <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center bg-background px-6 text-center">
+        <h1 className="font-heading text-2xl font-bold text-foreground">
           Let&apos;s build your checklist
         </h1>
-        <p className="mt-2 text-slate-600">
+        <p className="mt-2 font-body text-muted-foreground">
           We couldn&apos;t find your answers. Head back home and fill out the
           quick onboarding form to generate your personalized list.
         </p>
-        <Link
-          href="/"
-          className="mt-6 rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white shadow-md transition hover:bg-indigo-700"
-        >
+        <Button href="/" showArrow className="mt-8">
           Go to onboarding
-        </Link>
+        </Button>
       </main>
     );
   }
@@ -38,7 +35,7 @@ export default async function ChecklistPage({
   const categories = generateChecklist(answers, products);
 
   return (
-    <main>
+    <main className="min-h-screen bg-background">
       <ChecklistView
         answers={answers}
         categories={categories}

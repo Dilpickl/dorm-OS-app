@@ -1,21 +1,10 @@
 "use client";
 
-// Export controls for the checklist.
-//
-// Two exports are offered, both built without any external library by writing
-// a small HTML document into a new browser window and triggering the print
-// dialog (where the user can "Save as PDF"):
-//
-//   1. PDF export      - a full record: categories, selected tier, prices,
-//                         and the estimated total.
-//   2. Printable list  - a minimal, checkbox-only sheet for physical move-in
-//                         use, with no pricing or budget data.
-
+import { Button } from "@/components/ui/Button";
 import { budgetTierLabel, formatBudget } from "@/lib/budget";
 import { climateLabel, dormLabel } from "@/lib/options";
 import type { Budget, OnboardingAnswers } from "@/lib/types";
 
-// A flattened, display-ready view of one item for exporting.
 export interface ExportItem {
   name: string;
   tierLabel: string;
@@ -34,7 +23,6 @@ interface ExportButtonsProps {
   estimatedTotal: number;
 }
 
-// Escape the few characters that could break our generated HTML.
 function escapeHtml(text: string): string {
   return text
     .replace(/&/g, "&amp;")
@@ -42,7 +30,6 @@ function escapeHtml(text: string): string {
     .replace(/>/g, "&gt;");
 }
 
-// A short, file-name-friendly version of the school name.
 function safeSchool(school: string): string {
   return (
     school
@@ -61,7 +48,6 @@ function budgetLine(budget: Budget, estimatedTotal: number): string {
   return `Target budget: ${formatBudget(budget)} (${budgetTierLabel(budget)})`;
 }
 
-// Open a new window, write the HTML, and trigger printing once it loads.
 function printHtml(title: string, bodyHtml: string, styles: string) {
   const win = window.open("", "_blank");
   if (!win) {
@@ -77,12 +63,128 @@ function printHtml(title: string, bodyHtml: string, styles: string) {
   win.document.close();
 }
 
+const PDF_STYLES = `
+  *{box-sizing:border-box;}
+  body{
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+    color:#1e293b;
+    margin:0;
+    padding:40px 48px;
+    background:#fffdf5;
+  }
+  .header{
+    background:#fff;
+    border:2px solid #1e293b;
+    border-radius:16px;
+    padding:24px 28px;
+    margin-bottom:28px;
+    box-shadow:6px 6px 0 0 #1e293b;
+  }
+  h1{
+    font-size:26px;
+    margin:0 0 8px;
+    color:#1e293b;
+    letter-spacing:-0.02em;
+    font-weight:800;
+  }
+  .meta{
+    color:#64748b;
+    font-size:14px;
+    margin:0;
+    line-height:1.5;
+  }
+  .section{
+    background:#fff;
+    border:2px solid #1e293b;
+    border-radius:12px;
+    padding:16px 20px 8px;
+    margin-bottom:20px;
+    break-inside:avoid;
+    box-shadow:4px 4px 0 0 #e2e8f0;
+  }
+  h2{
+    font-size:15px;
+    margin:0 0 12px;
+    color:#8b5cf6;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    table-layout:fixed;
+    font-size:13px;
+  }
+  col.col-item{width:52%;}
+  col.col-tier{width:28%;}
+  col.col-price{width:20%;}
+  thead th{
+    text-align:left;
+    padding:8px 10px;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:#1e293b;
+    background:#f1f5f9;
+    border-bottom:2px solid #1e293b;
+  }
+  th.col-price,td.col-price{
+    text-align:right;
+    padding-right:12px;
+  }
+  th.col-tier,td.col-tier{
+    text-align:left;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  tbody td{
+    padding:10px;
+    border-bottom:1px solid #e2e8f0;
+    vertical-align:middle;
+  }
+  tbody tr:last-child td{border-bottom:none;}
+  tr.owned td{
+    color:#94a3b8;
+    text-decoration:line-through;
+  }
+  .total-wrap{
+    margin-top:24px;
+    text-align:right;
+  }
+  .total{
+    display:inline-block;
+    background:#8b5cf6;
+    color:#fff;
+    font-size:18px;
+    font-weight:800;
+    padding:12px 20px;
+    border-radius:9999px;
+    border:2px solid #1e293b;
+    box-shadow:4px 4px 0 0 #1e293b;
+  }
+  @media print{
+    body{background:#fff;padding:24px;}
+    .header,.section{break-inside:avoid;}
+  }
+`;
+
+const PRINTABLE_STYLES = `
+  body{font-family:system-ui,-apple-system,sans-serif;color:#1e293b;margin:32px;background:#fffdf5;}
+  h1{font-size:22px;margin-bottom:2px;color:#1e293b;font-weight:800;}
+  h2{font-size:15px;margin-top:20px;color:#8b5cf6;font-weight:700;}
+  .meta{color:#64748b;font-size:13px;margin-top:0;}
+  ul{list-style:none;padding:0;margin:8px 0;column-count:2;column-gap:32px;}
+  li{font-size:14px;margin:6px 0;display:flex;align-items:center;break-inside:avoid;}
+  .box{display:inline-block;width:14px;height:14px;border:2px solid #1e293b;border-radius:4px;margin-right:10px;}
+`;
+
 export default function ExportButtons({
   answers,
   categories,
   estimatedTotal,
 }: ExportButtonsProps) {
-  // ----- Export 1: detailed PDF -----
   function exportPdf() {
     const sections = categories
       .map((category) => {
@@ -91,45 +193,50 @@ export default function ExportButtons({
             (item) => `
               <tr class="${item.owned ? "owned" : ""}">
                 <td>${escapeHtml(item.name)}</td>
-                <td>${item.owned ? "Already owned" : escapeHtml(item.tierLabel)}</td>
-                <td class="price">${item.owned ? "-" : "$" + item.price.toLocaleString()}</td>
+                <td class="col-tier">${item.owned ? "Already owned" : escapeHtml(item.tierLabel)}</td>
+                <td class="col-price">${item.owned ? "—" : "$" + item.price.toLocaleString()}</td>
               </tr>`
           )
           .join("");
         return `
-          <h2>${escapeHtml(category.name)}</h2>
-          <table>
-            <thead><tr><th>Item</th><th>Tier</th><th class="price">Price</th></tr></thead>
-            <tbody>${rows}</tbody>
-          </table>`;
+          <div class="section">
+            <h2>${escapeHtml(category.name)}</h2>
+            <table>
+              <colgroup>
+                <col class="col-item" />
+                <col class="col-tier" />
+                <col class="col-price" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th class="col-tier">Tier</th>
+                  <th class="col-price">Price</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>`;
       })
       .join("");
 
     const body = `
-      <h1>Dorm Living OS - ${escapeHtml(answers.school)}</h1>
-      <p class="meta">
-        ${escapeHtml(climateLabel(answers.climate))} climate -
-        ${escapeHtml(dormLabel(answers.dormType))} -
-        ${escapeHtml(budgetLine(answers.budget, estimatedTotal))}
-      </p>
+      <div class="header">
+        <h1>Dorm Living OS — ${escapeHtml(answers.school)}</h1>
+        <p class="meta">
+          ${escapeHtml(climateLabel(answers.climate))} climate ·
+          ${escapeHtml(dormLabel(answers.dormType))} ·
+          ${escapeHtml(budgetLine(answers.budget, estimatedTotal))}
+        </p>
+      </div>
       ${sections}
-      <p class="total">Estimated total: $${estimatedTotal.toLocaleString()}</p>`;
+      <div class="total-wrap">
+        <p class="total">Estimated total: $${estimatedTotal.toLocaleString()}</p>
+      </div>`;
 
-    const styles = `
-      body{font-family:system-ui,-apple-system,sans-serif;color:#0f172a;margin:32px;}
-      h1{font-size:22px;margin-bottom:4px;}
-      h2{font-size:16px;margin-top:24px;border-bottom:2px solid #6366f1;padding-bottom:4px;}
-      .meta{color:#475569;font-size:13px;margin-top:0;}
-      table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px;}
-      th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;}
-      .price{text-align:right;}
-      tr.owned td{color:#94a3b8;text-decoration:line-through;}
-      .total{margin-top:24px;font-size:18px;font-weight:700;text-align:right;}`;
-
-    printHtml(`dorm-checklist-${safeSchool(answers.school)}`, body, styles);
+    printHtml(`dorm-checklist-${safeSchool(answers.school)}`, body, PDF_STYLES);
   }
 
-  // ----- Export 2: minimal printable checklist (no prices) -----
   function exportPrintable() {
     const sections = categories
       .map((category) => {
@@ -148,34 +255,17 @@ export default function ExportButtons({
       <p class="meta">${escapeHtml(answers.school)}</p>
       ${sections}`;
 
-    const styles = `
-      body{font-family:system-ui,-apple-system,sans-serif;color:#000;margin:32px;}
-      h1{font-size:22px;margin-bottom:2px;}
-      h2{font-size:15px;margin-top:20px;}
-      .meta{color:#555;font-size:13px;margin-top:0;}
-      ul{list-style:none;padding:0;margin:8px 0;column-count:2;column-gap:32px;}
-      li{font-size:14px;margin:6px 0;display:flex;align-items:center;break-inside:avoid;}
-      .box{display:inline-block;width:14px;height:14px;border:1.5px solid #000;border-radius:3px;margin-right:10px;}`;
-
-    printHtml(`dorm-move-in-${safeSchool(answers.school)}`, body, styles);
+    printHtml(`dorm-move-in-${safeSchool(answers.school)}`, body, PRINTABLE_STYLES);
   }
 
   return (
     <div className="flex flex-wrap gap-3">
-      <button
-        type="button"
-        onClick={exportPdf}
-        className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
-      >
+      <Button type="button" onClick={exportPdf}>
         Export PDF
-      </button>
-      <button
-        type="button"
-        onClick={exportPrintable}
-        className="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2"
-      >
+      </Button>
+      <Button type="button" variant="secondary" onClick={exportPrintable}>
         Printable checklist
-      </button>
+      </Button>
     </div>
   );
 }

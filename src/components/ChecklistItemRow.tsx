@@ -1,19 +1,9 @@
 "use client";
 
-// A single row in the checklist.
-//
-// Each row lets the student:
-//   - mark the item as "already owned" (removes it from the total)
-//   - pick a price tier (Bare minimum / Standard / Comfortable / Premium)
-//   - type a custom price that overrides the tier
-//   - open a (mock) shopping link
-//   - remove the item from the list entirely
-//
-// This is a "presentational" component: it holds no state of its own. The
-// parent (ChecklistView) owns the selection for every item and passes down
-// handlers, so the total at the top always stays in sync.
-
+import { ExternalLink, Trash2 } from "lucide-react";
 import { PRICE_TIER_OPTIONS } from "@/lib/budget";
+import { fieldClass } from "@/lib/design/forms";
+import { cn } from "@/lib/cn";
 import type { ChecklistItem, ItemSelection, PriceTier } from "@/lib/types";
 
 interface ChecklistItemRowProps {
@@ -34,36 +24,27 @@ export default function ChecklistItemRow({
   onRemove,
 }: ChecklistItemRowProps) {
   const { tier, customPrice, owned } = selection;
-
-  // The price shown in the input: a custom override if present, otherwise the
-  // selected tier's price.
   const shownPrice = customPrice ?? item.prices[tier];
 
   return (
-    <li
-      className={
-        "py-4 transition " + (owned ? "opacity-50" : "")
-      }
-    >
+    <li className={cn("px-4 py-4 transition", owned && "opacity-55")}>
       <div className="flex flex-wrap items-center gap-3">
-        {/* Already-own toggle */}
         <label className="flex cursor-pointer items-center gap-2">
           <input
             type="checkbox"
             checked={owned}
             onChange={() => onToggleOwned(item.id)}
-            className="h-5 w-5 shrink-0 cursor-pointer rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+            className="h-5 w-5 shrink-0 cursor-pointer rounded border-2 border-foreground accent-accent focus:ring-accent"
           />
           <span className="sr-only">Already own {item.name}</span>
         </label>
 
-        {/* Item name + link */}
         <div className="min-w-[10rem] flex-1">
           <p
-            className={
-              "font-medium text-slate-800 " +
-              (owned ? "line-through" : "")
-            }
+            className={cn(
+              "font-body font-semibold text-foreground",
+              owned && "line-through"
+            )}
           >
             {item.name}
           </p>
@@ -71,15 +52,15 @@ export default function ChecklistItemRow({
             href={item.link}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs font-medium text-indigo-600 hover:text-indigo-800 hover:underline"
+            className="mt-0.5 inline-flex items-center gap-1 font-body text-xs font-semibold text-accent hover:underline"
           >
             View options
+            <ExternalLink className="h-3 w-3" strokeWidth={2.5} aria-hidden />
           </a>
         </div>
 
-        {/* Editable price */}
         <div className="flex items-center gap-1">
-          <span className="text-slate-400">$</span>
+          <span className="font-body text-muted-foreground">$</span>
           <input
             type="number"
             min={0}
@@ -90,22 +71,23 @@ export default function ChecklistItemRow({
               onPriceChange(item.id, raw === "" ? null : Number(raw));
             }}
             aria-label={`Price for ${item.name}`}
-            className="w-20 rounded-md border border-slate-300 px-2 py-1 text-right text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-slate-100 disabled:text-slate-400"
+            className={cn(
+              fieldClass,
+              "mt-0 w-20 py-1 text-right text-sm shadow-none focus:shadow-pop-accent disabled:bg-muted"
+            )}
           />
         </div>
 
-        {/* Remove button */}
         <button
           type="button"
           onClick={() => onRemove(item.id)}
           aria-label={`Remove ${item.name}`}
-          className="rounded-md px-2 py-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+          className="rounded-full border-2 border-transparent p-2 text-muted-foreground transition hover:border-foreground hover:bg-secondary/20 hover:text-foreground"
         >
-          Remove
+          <Trash2 className="h-4 w-4" strokeWidth={2.5} />
         </button>
       </div>
 
-      {/* Tier selector */}
       <div className="mt-3 flex flex-wrap gap-1.5 pl-8">
         {PRICE_TIER_OPTIONS.map((option) => {
           const active = option.value === tier && customPrice === null;
@@ -115,15 +97,17 @@ export default function ChecklistItemRow({
               type="button"
               disabled={owned}
               onClick={() => onTierChange(item.id, option.value)}
-              className={
-                "rounded-full border px-3 py-1 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50 " +
-                (active
-                  ? "border-indigo-600 bg-indigo-600 text-white"
-                  : "border-slate-300 bg-white text-slate-600 hover:border-indigo-400 hover:text-indigo-600")
-              }
+              className={cn(
+                "rounded-full border-2 px-3 py-1 font-body text-xs font-semibold transition duration-300 ease-bounce disabled:cursor-not-allowed disabled:opacity-50",
+                active
+                  ? "border-foreground bg-accent text-accent-foreground shadow-pop-sm"
+                  : "border-border bg-card text-foreground hover:border-foreground hover:bg-tertiary/50"
+              )}
             >
               {option.label}{" "}
-              <span className={active ? "text-indigo-100" : "text-slate-400"}>
+              <span
+                className={active ? "text-accent-foreground/80" : "text-muted-foreground"}
+              >
                 ${item.prices[option.value]}
               </span>
             </button>
