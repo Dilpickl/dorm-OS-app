@@ -683,6 +683,10 @@ export default function ChecklistView({
           </button>
         </div>
       )}
+
+      <p className="mt-12 text-center font-body text-xs text-muted-foreground">
+        As an Amazon Associate I earn from qualifying purchases.
+      </p>
     </div>
   );
 }

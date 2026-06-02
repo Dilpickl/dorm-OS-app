@@ -50,16 +50,26 @@ export default function ChecklistItemRow({
             {item.name}
           </p>
           {item.link !== "#" && (
-            <a
-              href={item.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              data-view-options-link
-              className="mt-0.5 inline-flex items-center gap-1 font-body text-xs font-semibold text-accent hover:underline"
-            >
-              View options
-              <ExternalLink className="h-3 w-3" strokeWidth={2.5} aria-hidden />
-            </a>
+            <span className="group/link relative mt-0.5 inline-flex">
+              <a
+                href={item.link}
+                target="_blank"
+                rel="noopener noreferrer sponsored"
+                data-view-options-link
+                aria-describedby={`view-options-tip-${item.id}`}
+                className="inline-flex items-center gap-1 font-body text-xs font-semibold text-accent hover:underline"
+              >
+                View options
+                <ExternalLink className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+              </a>
+              <span
+                id={`view-options-tip-${item.id}`}
+                role="tooltip"
+                className="pointer-events-none absolute left-0 top-full z-10 mt-1 w-max max-w-[220px] rounded-lg border-2 border-foreground bg-card px-2.5 py-1.5 font-body text-[10px] font-semibold leading-snug text-foreground opacity-0 shadow-pop-sm transition-opacity duration-200 group-hover/link:opacity-100 group-focus-within/link:opacity-100"
+              >
+                My personal recommendation. (paid link)
+              </span>
+            </span>
           )}
         </div>
 
