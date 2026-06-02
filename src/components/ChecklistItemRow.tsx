@@ -2,7 +2,7 @@
 
 import { ExternalLink, Trash2 } from "lucide-react";
 import { PRICE_TIER_OPTIONS } from "@/lib/budget";
-import { fieldClass } from "@/lib/design/forms";
+import { priceInputClass } from "@/lib/design/forms";
 import { cn } from "@/lib/cn";
 import type { ChecklistItem, ItemSelection, PriceTier } from "@/lib/types";
 
@@ -24,12 +24,13 @@ export default function ChecklistItemRow({
   onRemove,
 }: ChecklistItemRowProps) {
   const { tier, customPrice, owned } = selection;
+  const isUserAdded = item.id.startsWith("custom-");
   const shownPrice = customPrice ?? item.prices[tier];
 
   return (
     <li className={cn("px-4 py-4 transition", owned && "opacity-55")}>
       <div className="flex flex-wrap items-center gap-3">
-        <label className="flex cursor-pointer items-center gap-2">
+        <label className="flex shrink-0 cursor-pointer items-center gap-2">
           <input
             type="checkbox"
             checked={owned}
@@ -48,19 +49,22 @@ export default function ChecklistItemRow({
           >
             {item.name}
           </p>
-          <a
-            href={item.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-0.5 inline-flex items-center gap-1 font-body text-xs font-semibold text-accent hover:underline"
-          >
-            View options
-            <ExternalLink className="h-3 w-3" strokeWidth={2.5} aria-hidden />
-          </a>
+          {item.link !== "#" && (
+            <a
+              href={item.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-view-options-link
+              className="mt-0.5 inline-flex items-center gap-1 font-body text-xs font-semibold text-accent hover:underline"
+            >
+              View options
+              <ExternalLink className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+            </a>
+          )}
         </div>
 
-        <div className="flex items-center gap-1">
-          <span className="font-body text-muted-foreground">$</span>
+        <div className="flex shrink-0 items-center gap-0.5">
+          <span className="font-body text-sm text-muted-foreground">$</span>
           <input
             type="number"
             min={0}
@@ -71,10 +75,7 @@ export default function ChecklistItemRow({
               onPriceChange(item.id, raw === "" ? null : Number(raw));
             }}
             aria-label={`Price for ${item.name}`}
-            className={cn(
-              fieldClass,
-              "mt-0 w-20 py-1 text-right text-sm shadow-none focus:shadow-pop-accent disabled:bg-muted"
-            )}
+            className={priceInputClass}
           />
         </div>
 
@@ -82,12 +83,13 @@ export default function ChecklistItemRow({
           type="button"
           onClick={() => onRemove(item.id)}
           aria-label={`Remove ${item.name}`}
-          className="rounded-full border-2 border-transparent p-2 text-muted-foreground transition hover:border-foreground hover:bg-secondary/20 hover:text-foreground"
+          className="shrink-0 rounded-full border-2 border-transparent p-2 text-muted-foreground transition hover:border-foreground hover:bg-secondary/20 hover:text-foreground"
         >
           <Trash2 className="h-4 w-4" strokeWidth={2.5} />
         </button>
       </div>
 
+      {!isUserAdded && (
       <div className="mt-3 flex flex-wrap gap-1.5 pl-8">
         {PRICE_TIER_OPTIONS.map((option) => {
           const active = option.value === tier && customPrice === null;
@@ -106,7 +108,9 @@ export default function ChecklistItemRow({
             >
               {option.label}{" "}
               <span
-                className={active ? "text-accent-foreground/80" : "text-muted-foreground"}
+                className={
+                  active ? "text-accent-foreground/80" : "text-muted-foreground"
+                }
               >
                 ${item.prices[option.value]}
               </span>
@@ -114,6 +118,7 @@ export default function ChecklistItemRow({
           );
         })}
       </div>
+      )}
     </li>
   );
 }

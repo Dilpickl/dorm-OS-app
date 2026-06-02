@@ -1,7 +1,7 @@
 // Checklist persistence — Supabase (via API) when configured, else localStorage.
 
 import { isSupabasePersistenceEnabled } from "../supabase/config";
-import type { ItemSelection, OnboardingAnswers } from "../types";
+import type { ChecklistItem, ItemSelection, OnboardingAnswers } from "../types";
 
 const STORAGE_KEY = "dorm-living-os:checklist:v1";
 
@@ -10,6 +10,7 @@ export interface PersistedChecklist {
   fingerprint: string;
   selections: Record<string, ItemSelection>;
   removed: string[];
+  customItems: ChecklistItem[];
   updatedAt: number;
 }
 
@@ -45,7 +46,7 @@ function loadFromLocal(answers: OnboardingAnswers): PersistedChecklist | null {
     const fingerprint = buildAnswersFingerprint(answers);
     if (parsed.fingerprint !== fingerprint) return null;
 
-    return parsed;
+    return { ...parsed, customItems: parsed.customItems ?? [] };
   } catch {
     return null;
   }
@@ -54,7 +55,8 @@ function loadFromLocal(answers: OnboardingAnswers): PersistedChecklist | null {
 function saveToLocal(
   answers: OnboardingAnswers,
   selections: Record<string, ItemSelection>,
-  removed: Set<string>
+  removed: Set<string>,
+  customItems: ChecklistItem[] = []
 ): number {
   const updatedAt = Date.now();
   const payload: PersistedChecklist = {
@@ -62,6 +64,7 @@ function saveToLocal(
     fingerprint: buildAnswersFingerprint(answers),
     selections,
     removed: Array.from(removed),
+    customItems,
     updatedAt,
   };
 
@@ -92,13 +95,18 @@ async function loadFromCloud(
   if (!response.ok) return null;
 
   const data = (await response.json()) as { saved: PersistedChecklist | null };
-  return data.saved;
+  if (!data.saved) return null;
+  return {
+    ...data.saved,
+    customItems: data.saved.customItems ?? [],
+  };
 }
 
 async function saveToCloud(
   answers: OnboardingAnswers,
   selections: Record<string, ItemSelection>,
-  removed: Set<string>
+  removed: Set<string>,
+  customItems: ChecklistItem[] = []
 ): Promise<number> {
   const response = await fetch("/api/checklist", {
     method: "POST",
@@ -107,6 +115,7 @@ async function saveToCloud(
       answers,
       selections,
       removed: Array.from(removed),
+      customItems,
     }),
   });
 
@@ -144,16 +153,17 @@ export async function loadPersistedChecklist(
 export async function savePersistedChecklist(
   answers: OnboardingAnswers,
   selections: Record<string, ItemSelection>,
-  removed: Set<string>
+  removed: Set<string>,
+  customItems: ChecklistItem[] = []
 ): Promise<number> {
   if (usesCloudPersistence()) {
     try {
-      return await saveToCloud(answers, selections, removed);
+      return await saveToCloud(answers, selections, removed, customItems);
     } catch (error) {
       console.warn("[storage] Cloud save failed, using local:", error);
     }
   }
-  return saveToLocal(answers, selections, removed);
+  return saveToLocal(answers, selections, removed, customItems);
 }
 
 export async function clearPersistedChecklist(

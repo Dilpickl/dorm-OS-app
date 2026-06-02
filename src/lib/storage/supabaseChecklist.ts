@@ -2,8 +2,10 @@
 
 import { getSupabaseAdmin } from "../supabase/admin";
 import { isSupabaseConfigured } from "../supabase/config";
-import type { ItemSelection, OnboardingAnswers } from "../types";
+import type { ChecklistItem, ItemSelection, OnboardingAnswers } from "../types";
 import type { PersistedChecklist } from "./checklistPersistence";
+
+const CUSTOM_ITEMS_SELECTION_KEY = "__customItems";
 
 export async function loadChecklistFromSupabase(
   fingerprint: string
@@ -19,11 +21,19 @@ export async function loadChecklistFromSupabase(
 
   if (error || !data) return null;
 
+  const rawSelections = data.selections as Record<string, unknown>;
+  const customItems = Array.isArray(rawSelections[CUSTOM_ITEMS_SELECTION_KEY])
+    ? (rawSelections[CUSTOM_ITEMS_SELECTION_KEY] as ChecklistItem[])
+    : [];
+  const selections = { ...rawSelections };
+  delete selections[CUSTOM_ITEMS_SELECTION_KEY];
+
   return {
     version: 1,
     fingerprint: data.fingerprint,
-    selections: data.selections as Record<string, ItemSelection>,
+    selections: selections as Record<string, ItemSelection>,
     removed: data.removed as string[],
+    customItems,
     updatedAt: new Date(data.updated_at).getTime(),
   };
 }
@@ -32,7 +42,8 @@ export async function saveChecklistToSupabase(
   fingerprint: string,
   answers: OnboardingAnswers,
   selections: Record<string, ItemSelection>,
-  removed: string[]
+  removed: string[],
+  customItems: ChecklistItem[] = []
 ): Promise<number> {
   const supabase = getSupabaseAdmin();
   const updatedAt = new Date().toISOString();
@@ -41,7 +52,10 @@ export async function saveChecklistToSupabase(
     {
       fingerprint,
       answers,
-      selections,
+      selections: {
+        ...selections,
+        [CUSTOM_ITEMS_SELECTION_KEY]: customItems,
+      },
       removed,
       updated_at: updatedAt,
     },

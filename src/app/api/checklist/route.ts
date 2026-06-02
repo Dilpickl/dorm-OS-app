@@ -10,7 +10,11 @@ import {
   saveChecklistToSupabase,
 } from "@/lib/storage/supabaseChecklist";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import type { ItemSelection, OnboardingAnswers } from "@/lib/types";
+import type {
+  ChecklistItem,
+  ItemSelection,
+  OnboardingAnswers,
+} from "@/lib/types";
 
 export async function GET(request: Request) {
   if (!isSupabaseConfigured()) {
@@ -45,6 +49,7 @@ export async function POST(request: Request) {
     answers?: OnboardingAnswers;
     selections?: Record<string, ItemSelection>;
     removed?: string[];
+    customItems?: ChecklistItem[];
   };
 
   try {
@@ -62,7 +67,8 @@ export async function POST(request: Request) {
     fingerprint,
     body.answers,
     body.selections,
-    body.removed
+    body.removed,
+    body.customItems ?? []
   );
 
   return NextResponse.json({ ok: true, fingerprint, updatedAt });
