@@ -296,7 +296,7 @@ export default function ViewOptionsCoachmark({
           className="font-body text-sm leading-relaxed text-foreground"
         >
           Don&apos;t waste time researching. Tap here to see the best dorm
-          essentials, already picked out for you.
+          essentials, that I personally picked!
         </p>
         <button
           type="button"

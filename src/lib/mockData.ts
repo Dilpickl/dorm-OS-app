@@ -19,15 +19,72 @@ const ALL_DORMS: DormType[] = [
   "off-campus",
 ];
 
-const shopLink = (name: string) =>
-  `https://www.example-shop.com/search?q=${encodeURIComponent(name)}`;
+/** Amazon affiliate short links (order matches catalog list in STATE.md). */
+const AFFILIATE_LINKS: Record<string, string> = {
+  "twin-xl-sheets": "https://amzn.to/4uM9TU3",
+  comforter: "https://amzn.to/3PZK1Fg",
+  pillows: "https://amzn.to/43bpYqs",
+  "mattress-topper": "https://amzn.to/3QdTPLU",
+  "heated-blanket": "https://amzn.to/4fR6sqE",
+  "cooling-sheets": "https://amzn.to/4vvkKC5",
+  "towel-set": "https://amzn.to/4x1HB9K",
+  "shower-caddy": "https://amzn.to/4vgXOGg",
+  "shower-shoes": "https://amzn.to/437ZxC3",
+  "toiletry-bag": "https://amzn.to/4a4k26k",
+  robe: "https://amzn.to/4ao69Qq",
+  "storage-bins": "https://amzn.to/3RLOhJ1",
+  "underbed-risers": "https://amzn.to/4dKf15c",
+  "closet-organizer": "https://amzn.to/4fWHxC3",
+  "drawer-cart": "https://amzn.to/43bqKUo",
+  "power-strip": "https://amzn.to/4uHI9A5",
+  "ext-cord": "https://amzn.to/4uHI9A5",
+  "desk-lamp": "https://amzn.to/4uODfBq",
+  fan: "https://amzn.to/3PR3ubd",
+  "space-heater": "https://amzn.to/3Q0XBbj",
+  "bluetooth-speaker": "https://amzn.to/4uWHDyf",
+  "noise-machine": "https://amzn.to/3SfSBAi",
+  "desk-organizer": "https://amzn.to/4u8bXEL",
+  notebooks: "https://amzn.to/4vsUb0j",
+  whiteboard: "https://amzn.to/4dLQ9dt",
+  "desk-chair-cushion": "https://amzn.to/4e4H66f",
+  "laundry-hamper": "https://amzn.to/43vulNj",
+  detergent: "https://amzn.to/4ehZw4G",
+  "cleaning-wipes": "https://amzn.to/4o3mMqv",
+  "mini-fridge": "https://amzn.to/4fVCcuD",
+  microwave: "https://amzn.to/4uOgu0z",
+  kettle: "https://amzn.to/3RBqoE3",
+  "dish-set": "https://amzn.to/4uPUy54",
+  cookware: "https://amzn.to/43JotzT",
+  "string-lights": "https://amzn.to/4ugf9OF",
+  "wall-tapestry": "https://amzn.to/4umu6PC",
+  "area-rug": "https://amzn.to/4vjXlDf",
+  plants: "https://amzn.to/4vvlKGl",
+  "yoga-mat": "https://amzn.to/3PYlgcn",
+  dumbbells: "https://amzn.to/4o17S3S",
+  "resistance-bands": "https://amzn.to/4fUoCHY",
+  "gaming-headset": "https://amzn.to/4e0dXcj",
+  controller: "https://amzn.to/4ucK2DI",
+  monitor: "https://amzn.to/3SfTito",
+  "mini-blender": "https://amzn.to/43auZiY",
+  "snack-storage": "https://amzn.to/4vplV5F",
+  headphones: "https://amzn.to/4vtt1Xa",
+  ukulele: "https://amzn.to/4fFQZd9",
+  "art-supplies": "https://amzn.to/4o4g8Qw",
+  easel: "https://amzn.to/4dLyp1F",
+  "book-shelf": "https://amzn.to/4oezbb5",
+  "reading-light": "https://amzn.to/3RFqFpv",
+  "gym-bag": "https://amzn.to/4fWrKmI",
+  "water-bottle": "https://amzn.to/4dXImYR",
+  "coffee-maker": "https://amzn.to/3QfAWbu",
+  "travel-mug": "https://amzn.to/4dJvqXE",
+};
 
 const product = (
   p: Omit<CatalogProduct, "link"> & { link?: string }
 ): CatalogProduct => ({
   priority: 50,
   ...p,
-  link: p.link ?? shopLink(p.name),
+  link: p.link ?? AFFILIATE_LINKS[p.id] ?? "#",
 });
 
 export const mockCatalog: CatalogProduct[] = [
