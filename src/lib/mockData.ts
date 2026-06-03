@@ -42,7 +42,6 @@ const AFFILIATE_LINKS: Record<string, string> = {
   fan: "https://amzn.to/3PR3ubd",
   "space-heater": "https://amzn.to/3Q0XBbj",
   "bluetooth-speaker": "https://amzn.to/4uWHDyf",
-  "noise-machine": "https://amzn.to/3SfSBAi",
   "desk-organizer": "https://amzn.to/4u8bXEL",
   notebooks: "https://amzn.to/4vsUb0j",
   whiteboard: "https://amzn.to/4dLQ9dt",
@@ -116,7 +115,6 @@ export const mockCatalog: CatalogProduct[] = [
   product({ id: "fan", name: "Clip-On Fan", category: "Electronics", basePrice: 22, climates: WARM_CLIMATES, priority: 75 }),
   product({ id: "space-heater", name: "Small Space Heater", category: "Electronics", basePrice: 35, climates: COLD_CLIMATES, priority: 75 }),
   product({ id: "bluetooth-speaker", name: "Bluetooth Speaker", category: "Electronics", basePrice: 40, priority: 35 }),
-  product({ id: "noise-machine", name: "White Noise Machine", category: "Electronics", basePrice: 30, priority: 40 }),
   product({ id: "ear-plugs", name: "Ear Plugs", category: "Electronics", basePrice: 12, priority: 65 }),
   product({ id: "tv", name: "TV", category: "Electronics", basePrice: 150, priority: 32 }),
 

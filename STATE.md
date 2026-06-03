@@ -28,7 +28,7 @@ Note: An older clone may exist at `C:\Users\dangi\OneDrive\Documents\dorm-living
 - **Climate (3):** hot, cold, four-season — **Variable climate removed**
 - Dorm type (5), hobbies (multi-select), budget slider $100–$2000 (default $800), “I don’t know” → `budget=unknown`
 
-### Catalog (`src/lib/mockData.ts` — **60 products**)
+### Catalog (`src/lib/mockData.ts` — **59 products**)
 - Priority: **Supabase** `products` → `CATALOG_API_URL` → built-in mock
 - All catalog items have **`amzn.to` affiliate links** in `AFFILIATE_LINKS` map
 - Custom tier prices for some items via `src/lib/catalog/priceOverrides.ts` (e.g. portable vacuum $10–$60, TV $60–$500, board games $10–$60)
