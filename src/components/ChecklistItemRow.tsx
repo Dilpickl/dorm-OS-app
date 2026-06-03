@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { ExternalLink, Trash2 } from "lucide-react";
 import { PRICE_TIER_OPTIONS } from "@/lib/budget";
 import { priceInputClass } from "@/lib/design/forms";
@@ -26,6 +27,27 @@ export default function ChecklistItemRow({
   const { tier, customPrice, owned } = selection;
   const isUserAdded = item.id.startsWith("custom-");
   const shownPrice = customPrice ?? item.prices[tier];
+  const [priceDraft, setPriceDraft] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPriceDraft(null);
+  }, [item.id, tier, customPrice, owned]);
+
+  const commitPriceDraft = (raw: string) => {
+    if (raw.trim() === "") {
+      onPriceChange(item.id, null);
+      return;
+    }
+    const next = Number(raw);
+    if (!Number.isFinite(next) || next < 0) {
+      onPriceChange(item.id, null);
+      return;
+    }
+    onPriceChange(item.id, next);
+  };
+
+  const priceInputValue =
+    priceDraft !== null ? priceDraft : String(shownPrice);
 
   return (
     <li className={cn("px-4 py-4 transition", owned && "opacity-55")}>
@@ -78,11 +100,20 @@ export default function ChecklistItemRow({
           <input
             type="number"
             min={0}
-            value={shownPrice}
+            value={priceInputValue}
             disabled={owned}
-            onChange={(e) => {
-              const raw = e.target.value;
-              onPriceChange(item.id, raw === "" ? null : Number(raw));
+            onFocus={() => setPriceDraft(String(shownPrice))}
+            onChange={(e) => setPriceDraft(e.target.value)}
+            onBlur={() => {
+              if (priceDraft !== null) {
+                commitPriceDraft(priceDraft);
+                setPriceDraft(null);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.currentTarget.blur();
+              }
             }}
             aria-label={`Price for ${item.name}`}
             className={priceInputClass}

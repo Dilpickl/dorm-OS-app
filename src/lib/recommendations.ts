@@ -1,6 +1,7 @@
 // Recommendation engine — filters, scores, and ranks catalog products.
 
 import type { CatalogProduct } from "./catalog/types";
+import { CATALOG_TIER_OVERRIDES } from "./catalog/priceOverrides";
 import { deriveTiers, defaultTierForBudget } from "./budget";
 import type {
   ChecklistCategory,
@@ -90,7 +91,8 @@ function toChecklistItem(
     id: product.id,
     name: product.name,
     category: product.category,
-    prices: deriveTiers(product.basePrice),
+    prices:
+      CATALOG_TIER_OVERRIDES[product.id] ?? deriveTiers(product.basePrice),
     defaultTier: defaultTierForBudget(answers.budget),
     link: product.link,
   };

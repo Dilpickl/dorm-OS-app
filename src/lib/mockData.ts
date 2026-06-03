@@ -77,6 +77,7 @@ const AFFILIATE_LINKS: Record<string, string> = {
   "water-bottle": "https://amzn.to/4dXImYR",
   "coffee-maker": "https://amzn.to/3QfAWbu",
   "travel-mug": "https://amzn.to/4dJvqXE",
+  "portable-vacuum": "https://amzn.to/4o2HneB",
 };
 
 const product = (
@@ -122,6 +123,7 @@ export const mockCatalog: CatalogProduct[] = [
   product({ id: "laundry-hamper", name: "Pop-Up Laundry Hamper", category: "Laundry & Cleaning", basePrice: 16, essential: true, priority: 90 }),
   product({ id: "detergent", name: "Laundry Detergent Pods", category: "Laundry & Cleaning", basePrice: 14, essential: true, priority: 85 }),
   product({ id: "cleaning-wipes", name: "Disinfecting Wipes", category: "Laundry & Cleaning", basePrice: 10, essential: true, priority: 80 }),
+  product({ id: "portable-vacuum", name: "Portable Vacuum", category: "Laundry & Cleaning", basePrice: 25, priority: 75 }),
 
   product({ id: "mini-fridge", name: "Mini Fridge", category: "Kitchen", basePrice: 120, dormTypes: ALL_DORMS, priority: 80 }),
   product({ id: "microwave", name: "Compact Microwave", category: "Kitchen", basePrice: 70, dormTypes: KITCHEN_DORMS, priority: 70 }),
