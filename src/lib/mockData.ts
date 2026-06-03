@@ -78,6 +78,9 @@ const AFFILIATE_LINKS: Record<string, string> = {
   "coffee-maker": "https://amzn.to/3QfAWbu",
   "travel-mug": "https://amzn.to/4dJvqXE",
   "portable-vacuum": "https://amzn.to/4o2HneB",
+  "ear-plugs": "https://amzn.to/4o7sVll",
+  tv: "https://amzn.to/4uHySI9",
+  "board-games": "https://amzn.to/4fWKW3K",
 };
 
 const product = (
@@ -114,6 +117,8 @@ export const mockCatalog: CatalogProduct[] = [
   product({ id: "space-heater", name: "Small Space Heater", category: "Electronics", basePrice: 35, climates: COLD_CLIMATES, priority: 75 }),
   product({ id: "bluetooth-speaker", name: "Bluetooth Speaker", category: "Electronics", basePrice: 40, priority: 35 }),
   product({ id: "noise-machine", name: "White Noise Machine", category: "Electronics", basePrice: 30, priority: 40 }),
+  product({ id: "ear-plugs", name: "Ear Plugs", category: "Electronics", basePrice: 12, priority: 65 }),
+  product({ id: "tv", name: "TV", category: "Electronics", basePrice: 150, priority: 32 }),
 
   product({ id: "desk-organizer", name: "Desk Organizer", category: "Study", basePrice: 16, essential: true, priority: 85 }),
   product({ id: "notebooks", name: "Notebooks & Supplies", category: "Study", basePrice: 25, essential: true, priority: 90 }),
@@ -135,6 +140,7 @@ export const mockCatalog: CatalogProduct[] = [
   product({ id: "wall-tapestry", name: "Wall Tapestry", category: "Decor", basePrice: 20, priority: 20 }),
   product({ id: "area-rug", name: "Soft Area Rug", category: "Decor", basePrice: 40, priority: 30 }),
   product({ id: "plants", name: "Faux Plants Set", category: "Decor", basePrice: 22, priority: 20 }),
+  product({ id: "board-games", name: "Board Games", category: "Games", basePrice: 25, priority: 28 }),
 
   product({ id: "yoga-mat", name: "Yoga Mat", category: "Fitness", basePrice: 20, hobby: "fitness", priority: 70 }),
   product({ id: "dumbbells", name: "Adjustable Dumbbells", category: "Fitness", basePrice: 50, hobby: "fitness", priority: 55 }),
