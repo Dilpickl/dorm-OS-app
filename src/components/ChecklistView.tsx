@@ -33,7 +33,7 @@ import {
 import ChecklistCategorySection from "./ChecklistCategorySection";
 import CostSummary from "./CostSummary";
 import ExportButtons, { type ExportCategory } from "./ExportButtons";
-import ViewOptionsCoachmark from "./ViewOptionsCoachmark";
+import ChecklistTutorial from "./ChecklistTutorial";
 
 const CATEGORY_TINTS = [
   "accent",
@@ -401,6 +401,7 @@ export default function ChecklistView({
             tierLabel: priceTierLabel(selection.tier),
             price: effectivePrice(item, selection),
             owned: selection.owned,
+            link: item.link !== "#" ? item.link : null,
           };
         }),
       })),
@@ -455,6 +456,7 @@ export default function ChecklistView({
             type="button"
             variant={showAddItem ? "secondary" : "primary"}
             className="min-h-10 px-4 py-2 text-sm"
+            data-tutorial-target="add-item-button"
             onClick={() => setShowAddItem((open) => !open)}
           >
             {showAddItem ? "Cancel" : "Add item"}
@@ -613,13 +615,18 @@ export default function ChecklistView({
       )}
 
       <div className="mb-8 space-y-4">
-        <CostSummary
-          estimatedTotal={estimatedTotal}
-          budget={answers.budget}
-          itemCount={visibleItems.length}
-          ownedCount={ownedCount}
-        />
-        <div className="flex flex-wrap items-center justify-end gap-3">
+        <div data-tutorial-target="estimated-total">
+          <CostSummary
+            estimatedTotal={estimatedTotal}
+            budget={answers.budget}
+            itemCount={visibleItems.length}
+            ownedCount={ownedCount}
+          />
+        </div>
+        <div
+          data-tutorial-target="export-buttons"
+          className="flex flex-wrap items-center justify-end gap-3"
+        >
           <ExportButtons
             answers={answers}
             categories={exportCategories}
@@ -659,7 +666,7 @@ export default function ChecklistView({
         </div>
       )}
 
-      <ViewOptionsCoachmark
+      <ChecklistTutorial
         active={visibleItems.length > 0}
         checklistRef={checklistSectionRef}
       />

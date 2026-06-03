@@ -57,6 +57,7 @@ export default function ChecklistItemRow({
             type="checkbox"
             checked={owned}
             onChange={() => onToggleOwned(item.id)}
+            data-tutorial-owned-checkbox
             className="h-5 w-5 shrink-0 cursor-pointer rounded border-2 border-foreground accent-accent focus:ring-accent"
           />
           <span className="sr-only">Already own {item.name}</span>
@@ -124,6 +125,7 @@ export default function ChecklistItemRow({
           type="button"
           onClick={() => onRemove(item.id)}
           aria-label={`Remove ${item.name}`}
+          data-tutorial-remove
           className="shrink-0 rounded-full border-2 border-transparent p-2 text-muted-foreground transition hover:border-foreground hover:bg-secondary/20 hover:text-foreground"
         >
           <Trash2 className="h-4 w-4" strokeWidth={2.5} />

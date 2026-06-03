@@ -10,6 +10,8 @@ export interface ExportItem {
   tierLabel: string;
   price: number;
   owned: boolean;
+  /** Catalog affiliate URL; omitted for custom items and placeholders. */
+  link?: string | null;
 }
 
 export interface ExportCategory {
@@ -28,6 +30,17 @@ function escapeHtml(text: string): string {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
+}
+
+function escapeAttr(text: string): string {
+  return escapeHtml(text).replace(/"/g, "&quot;");
+}
+
+function exportLinkHtml(link: string | null | undefined): string {
+  if (!link || link === "#") {
+    return '<span class="no-link">—</span>';
+  }
+  return `<a class="item-link" href="${escapeAttr(link)}">${escapeHtml(link)}</a>`;
 }
 
 function safeSchool(school: string): string {
@@ -116,9 +129,10 @@ const PDF_STYLES = `
     table-layout:fixed;
     font-size:13px;
   }
-  col.col-item{width:52%;}
-  col.col-tier{width:28%;}
-  col.col-price{width:20%;}
+  col.col-item{width:34%;}
+  col.col-link{width:30%;}
+  col.col-tier{width:22%;}
+  col.col-price{width:14%;}
   thead th{
     text-align:left;
     padding:8px 10px;
@@ -139,13 +153,24 @@ const PDF_STYLES = `
     overflow:hidden;
     text-overflow:ellipsis;
   }
+  th.col-link,td.col-link{
+    text-align:left;
+    word-break:break-all;
+    font-size:11px;
+  }
+  .item-link{
+    color:#7c3aed;
+    text-decoration:underline;
+    font-weight:600;
+  }
+  .no-link{color:#94a3b8;}
   tbody td{
     padding:10px;
     border-bottom:1px solid #e2e8f0;
     vertical-align:middle;
   }
   tbody tr:last-child td{border-bottom:none;}
-  tr.owned td{
+  tr.owned td:not(.col-link){
     color:#94a3b8;
     text-decoration:line-through;
   }
@@ -193,6 +218,7 @@ export default function ExportButtons({
             (item) => `
               <tr class="${item.owned ? "owned" : ""}">
                 <td>${escapeHtml(item.name)}</td>
+                <td class="col-link">${exportLinkHtml(item.link)}</td>
                 <td class="col-tier">${item.owned ? "Already owned" : escapeHtml(item.tierLabel)}</td>
                 <td class="col-price">${item.owned ? "—" : "$" + item.price.toLocaleString()}</td>
               </tr>`
@@ -204,12 +230,14 @@ export default function ExportButtons({
             <table>
               <colgroup>
                 <col class="col-item" />
+                <col class="col-link" />
                 <col class="col-tier" />
                 <col class="col-price" />
               </colgroup>
               <thead>
                 <tr>
                   <th>Item</th>
+                  <th class="col-link">Shop link</th>
                   <th class="col-tier">Tier</th>
                   <th class="col-price">Price</th>
                 </tr>
