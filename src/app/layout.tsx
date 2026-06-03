@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Outfit, Plus_Jakarta_Sans } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -31,6 +32,7 @@ export default function RootLayout({
         className={`${outfit.variable} ${jakarta.variable} font-body antialiased`}
       >
         {children}
+        <Analytics />
       </body>
     </html>
   );
