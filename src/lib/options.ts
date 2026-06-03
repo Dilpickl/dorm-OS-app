@@ -16,7 +16,6 @@ export const CLIMATE_OPTIONS: Option<Climate>[] = [
   { value: "hot", label: "Hot year-round" },
   { value: "cold", label: "Cold year-round" },
   { value: "four-season", label: "Four-season climate" },
-  { value: "variable", label: "Variable climate" },
 ];
 
 export const DORM_OPTIONS: Option<DormType>[] = [

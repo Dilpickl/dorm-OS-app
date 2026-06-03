@@ -17,7 +17,7 @@ The app loads products from an external HTTP API when `CATALOG_API_URL` is set. 
       "link": "https://example.com/...",
       "essential": true,
       "priority": 100,
-      "climates": ["hot", "four-season", "variable"],
+      "climates": ["hot", "four-season"],
       "dormTypes": ["traditional-double", "suite"],
       "hobby": "gaming"
     }

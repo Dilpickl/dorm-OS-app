@@ -7,8 +7,8 @@ import type { Climate, DormType } from "./types";
 
 export type { CatalogProduct };
 
-const COLD_CLIMATES: Climate[] = ["cold", "four-season", "variable"];
-const WARM_CLIMATES: Climate[] = ["hot", "four-season", "variable"];
+const COLD_CLIMATES: Climate[] = ["cold", "four-season"];
+const WARM_CLIMATES: Climate[] = ["hot", "four-season"];
 
 const KITCHEN_DORMS: DormType[] = ["suite", "apartment", "off-campus"];
 const ALL_DORMS: DormType[] = [

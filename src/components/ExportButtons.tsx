@@ -287,7 +287,10 @@ export default function ExportButtons({
   }
 
   return (
-    <div className="flex flex-wrap gap-3">
+    <div
+      data-tutorial-target="export-buttons"
+      className="inline-flex flex-wrap items-center gap-3"
+    >
       <Button type="button" onClick={exportPdf}>
         Export PDF
       </Button>

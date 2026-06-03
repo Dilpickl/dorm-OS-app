@@ -70,7 +70,7 @@ const STEPS: { id: TutorialStepId; message: string }[] = [
   {
     id: "view-options",
     message:
-      "Don't waste time researching. Tap here to see the best dorm essentials, that I personally picked!",
+      "Don't waste time researching. Tap here to see the best dorm essentials, that I personally picked! :]",
   },
 ];
 

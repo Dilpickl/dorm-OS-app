@@ -65,11 +65,6 @@ function scoreProduct(
     if (product.id === "cookware") score += 12;
   }
 
-  // Variable climate: slight boost for items tagged for multiple climates.
-  if (answers.climate === "variable" && product.climates && product.climates.length >= 2) {
-    score += 8;
-  }
-
   // Four-season: boost both heating and cooling accessories slightly.
   if (answers.climate === "four-season") {
     if (product.id === "fan" || product.id === "space-heater") score += 6;

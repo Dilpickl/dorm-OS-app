@@ -4,7 +4,7 @@ import { getSupabaseAdmin, type ProductRow } from "../supabase/admin";
 import type { CatalogProduct } from "./types";
 import type { Climate, DormType, Hobby } from "../types";
 
-const CLIMATES: Climate[] = ["hot", "cold", "four-season", "variable"];
+const CLIMATES: Climate[] = ["hot", "cold", "four-season"];
 const DORM_TYPES: DormType[] = [
   "traditional-double",
   "traditional-single",

@@ -5,7 +5,7 @@
 
 // The climate where the school is located. This affects which items make
 // sense (for example, a heated blanket for a cold-year-round school).
-export type Climate = "hot" | "cold" | "four-season" | "variable";
+export type Climate = "hot" | "cold" | "four-season";
 
 // The kind of dorm a student will live in. This affects which items make
 // sense (for example, an apartment usually has a kitchen).

@@ -623,10 +623,7 @@ export default function ChecklistView({
             ownedCount={ownedCount}
           />
         </div>
-        <div
-          data-tutorial-target="export-buttons"
-          className="flex flex-wrap items-center justify-end gap-3"
-        >
+        <div className="flex justify-end">
           <ExportButtons
             answers={answers}
             categories={exportCategories}

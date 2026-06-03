@@ -25,7 +25,7 @@ Note: An older clone may exist at `C:\Users\dangi\OneDrive\Documents\dorm-living
 
 ### Onboarding → Checklist
 - Answers encoded in query string → `/checklist?…`
-- Climate (4), dorm type (5), hobbies (multi-select), budget slider $100–$2000 (default $800), “I don’t know” → `budget=unknown`
+- Climate (3), dorm type (5), hobbies (multi-select), budget slider $100–$2000 (default $800), “I don’t know” → `budget=unknown`
 
 ### Catalog
 - Priority: **Supabase** `products` → `CATALOG_API_URL` → `src/lib/mockData.ts`
