@@ -1,7 +1,13 @@
 // Checklist persistence — Supabase (via API) when configured, else localStorage.
 
+import { normalizeSchool } from "../security/checklistPayload";
 import { isSupabasePersistenceEnabled } from "../supabase/config";
 import type { ChecklistItem, ItemSelection, OnboardingAnswers } from "../types";
+import {
+  clearStoredSaveToken,
+  getStoredSaveToken,
+  setStoredSaveToken,
+} from "./saveTokenStorage";
 
 const STORAGE_KEY = "dorm-living-os:checklist:v1";
 
@@ -19,7 +25,7 @@ export function buildAnswersFingerprint(answers: OnboardingAnswers): string {
   const budget =
     answers.budget === "unknown" ? "unknown" : String(answers.budget);
   return [
-    answers.school.trim().toLowerCase(),
+    normalizeSchool(answers.school).toLowerCase(),
     answers.climate,
     budget,
     answers.dormType,
@@ -88,13 +94,22 @@ async function loadFromCloud(
   answers: OnboardingAnswers
 ): Promise<PersistedChecklist | null> {
   const fingerprint = buildAnswersFingerprint(answers);
-  const response = await fetch(
-    `/api/checklist?fingerprint=${encodeURIComponent(fingerprint)}`
-  );
+  const saveToken = getStoredSaveToken(fingerprint);
+  const params = new URLSearchParams({ fingerprint });
+  if (saveToken) params.set("saveToken", saveToken);
 
+  const response = await fetch(`/api/checklist?${params.toString()}`);
+
+  if (response.status === 403) return null;
   if (!response.ok) return null;
 
-  const data = (await response.json()) as { saved: PersistedChecklist | null };
+  const data = (await response.json()) as {
+    saved: PersistedChecklist | null;
+    saveToken?: string;
+  };
+  if (data.saveToken) {
+    setStoredSaveToken(fingerprint, data.saveToken);
+  }
   if (!data.saved) return null;
   return {
     ...data.saved,
@@ -108,6 +123,9 @@ async function saveToCloud(
   removed: Set<string>,
   customItems: ChecklistItem[] = []
 ): Promise<number> {
+  const fingerprint = buildAnswersFingerprint(answers);
+  const saveToken = getStoredSaveToken(fingerprint);
+
   const response = await fetch("/api/checklist", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -116,6 +134,7 @@ async function saveToCloud(
       selections,
       removed: Array.from(removed),
       customItems,
+      ...(saveToken ? { saveToken } : {}),
     }),
   });
 
@@ -123,15 +142,26 @@ async function saveToCloud(
     throw new Error("Cloud save failed");
   }
 
-  const data = (await response.json()) as { updatedAt: number };
+  const data = (await response.json()) as {
+    updatedAt: number;
+    saveToken?: string;
+  };
+  if (data.saveToken) {
+    setStoredSaveToken(fingerprint, data.saveToken);
+  }
   return data.updatedAt;
 }
 
 async function clearCloud(answers: OnboardingAnswers): Promise<void> {
   const fingerprint = buildAnswersFingerprint(answers);
-  await fetch(`/api/checklist?fingerprint=${encodeURIComponent(fingerprint)}`, {
+  const saveToken = getStoredSaveToken(fingerprint);
+  const params = new URLSearchParams({ fingerprint });
+  if (saveToken) params.set("saveToken", saveToken);
+
+  await fetch(`/api/checklist?${params.toString()}`, {
     method: "DELETE",
   });
+  clearStoredSaveToken(fingerprint);
 }
 
 // ----- Public API -----

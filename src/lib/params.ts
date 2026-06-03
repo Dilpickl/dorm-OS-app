@@ -6,6 +6,7 @@
 // page always agree on the format.
 
 import { clampBudget } from "./budget";
+import { normalizeSchool } from "./security/checklistPayload";
 import { CLIMATE_OPTIONS, DORM_OPTIONS, HOBBY_OPTIONS } from "./options";
 import type {
   Budget,
@@ -54,7 +55,7 @@ function parseBudget(raw: string): Budget {
 // Returns `null` if the required answers are missing or invalid, so the
 // checklist page can show a friendly "fill out the form" message.
 export function parseAnswers(raw: RawSearchParams): OnboardingAnswers | null {
-  const school = first(raw.school).trim();
+  const school = normalizeSchool(first(raw.school));
   const climate = first(raw.climate) as Climate;
   const dormType = first(raw.dormType) as DormType;
 
@@ -70,7 +71,7 @@ export function parseAnswers(raw: RawSearchParams): OnboardingAnswers | null {
     .filter((h): h is Hobby => HOBBIES.includes(h as Hobby));
 
   return {
-    school: school || "your school",
+    school,
     climate,
     budget: parseBudget(first(raw.budget)),
     dormType,

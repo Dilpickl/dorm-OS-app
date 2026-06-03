@@ -11,6 +11,7 @@ import { fieldClass, labelClass, selectClass } from "@/lib/design/forms";
 import { cn } from "@/lib/cn";
 import { CLIMATE_OPTIONS, DORM_OPTIONS, HOBBY_OPTIONS } from "@/lib/options";
 import { answersToQuery } from "@/lib/params";
+import { SCHOOL_MAX_LENGTH } from "@/lib/security/limits";
 import type {
   Budget,
   Climate,
@@ -38,7 +39,7 @@ export default function OnboardingForm() {
 
   function goToChecklist(budgetValue: Budget) {
     const answers: OnboardingAnswers = {
-      school: school.trim() || "your school",
+      school: school.trim().slice(0, SCHOOL_MAX_LENGTH) || "your school",
       climate,
       budget: budgetValue,
       dormType,
@@ -75,6 +76,7 @@ export default function OnboardingForm() {
               id="school"
               type="text"
               value={school}
+              maxLength={SCHOOL_MAX_LENGTH}
               onChange={(e) => setSchool(e.target.value)}
               placeholder="e.g. University of Illinois"
               className={fieldClass}

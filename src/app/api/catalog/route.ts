@@ -4,8 +4,12 @@
 
 import { NextResponse } from "next/server";
 import { getCatalog } from "@/lib/catalog/getCatalog";
+import { rateLimitOrNull } from "@/lib/security/withRateLimit";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const limited = await rateLimitOrNull(request, "/api/catalog");
+  if (limited) return limited;
+
   const { products, source } = await getCatalog();
   return NextResponse.json({
     products,

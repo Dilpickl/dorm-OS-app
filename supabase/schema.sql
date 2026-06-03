@@ -23,33 +23,20 @@ create policy "Anyone can read products"
   to anon, authenticated
   using (true);
 
--- Checklist progress (keyed by onboarding fingerprint; no auth in v1)
+-- Checklist progress (keyed by onboarding fingerprint + opaque save_token)
 create table if not exists public.checklist_saves (
   fingerprint text primary key,
   answers jsonb not null,
   selections jsonb not null,
   removed jsonb not null default '[]'::jsonb,
+  save_token text,
   updated_at timestamptz not null default now()
 );
 
 alter table public.checklist_saves enable row level security;
 
--- Server uses service_role key and bypasses RLS.
--- These policies allow future client-side access with anon key if needed.
-create policy "Anyone can read checklist saves"
-  on public.checklist_saves for select
-  to anon, authenticated
-  using (true);
-
-create policy "Anyone can insert checklist saves"
-  on public.checklist_saves for insert
-  to anon, authenticated
-  with check (true);
-
-create policy "Anyone can update checklist saves"
-  on public.checklist_saves for update
-  to anon, authenticated
-  using (true);
+-- No anon/authenticated policies: only the service role (API routes) may access.
+-- Run supabase/migrations/20260603_checklist_security.sql on existing projects.
 
 create index if not exists checklist_saves_updated_at_idx
   on public.checklist_saves (updated_at desc);

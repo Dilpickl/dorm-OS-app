@@ -1,5 +1,6 @@
 // Validates and normalizes raw JSON from an external catalog API.
 
+import { sanitizeItemLink } from "../security/urls";
 import type { Climate, DormType, Hobby } from "../types";
 import type { CatalogProduct } from "./types";
 
@@ -64,12 +65,16 @@ function parseOneProduct(raw: unknown): CatalogProduct | null {
       ? (raw.hobby as Hobby)
       : undefined;
 
+  const safeLink = link
+    ? sanitizeItemLink(link)
+    : `https://www.example-shop.com/search?q=${encodeURIComponent(name)}`;
+
   return {
     id,
     name,
     category,
     basePrice: Math.round(basePrice),
-    link: link || `https://www.example-shop.com/search?q=${encodeURIComponent(name)}`,
+    link: safeLink,
     climates,
     dormTypes,
     hobby,

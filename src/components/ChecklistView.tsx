@@ -25,6 +25,10 @@ import { Panel } from "@/components/ui/Panel";
 import { SceneDecor } from "@/components/ui/SceneDecor";
 import { cn } from "@/lib/cn";
 import {
+  CATEGORY_MAX_LENGTH,
+  ITEM_NAME_MAX_LENGTH,
+} from "@/lib/security/limits";
+import {
   fieldClass,
   labelClass,
   priceInputClass,
@@ -307,13 +311,15 @@ export default function ChecklistView({
   function handleAddCustomItem(event: React.FormEvent) {
     event.preventDefault();
 
-    const name = newItemName.trim();
+    const name = newItemName.trim().slice(0, ITEM_NAME_MAX_LENGTH);
     if (!name) return;
 
     const price = Math.max(0, Math.round(Number(newItemPrice) || 0));
-    const category = usingCustomCategory
-      ? newItemCustomCategoryName.trim() || "Custom"
-      : categoryChoice;
+    const category = (
+      usingCustomCategory
+        ? newItemCustomCategoryName.trim() || "Custom"
+        : categoryChoice
+    ).slice(0, CATEGORY_MAX_LENGTH);
 
     if (usingCustomCategory && !newItemCustomCategoryName.trim()) return;
     const id = `custom-${Date.now()}-${name
@@ -475,6 +481,7 @@ export default function ChecklistView({
               <input
                 id="custom-item-name"
                 value={newItemName}
+                maxLength={ITEM_NAME_MAX_LENGTH}
                 onChange={(event) => setNewItemName(event.target.value)}
                 placeholder="e.g. Desk lamp"
                 className={fieldClass}
@@ -510,6 +517,7 @@ export default function ChecklistView({
                 <input
                   id="custom-item-category-name"
                   value={newItemCustomCategoryName}
+                  maxLength={CATEGORY_MAX_LENGTH}
                   onChange={(event) =>
                     setNewItemCustomCategoryName(event.target.value)
                   }

@@ -1,5 +1,6 @@
 // Server-only Supabase client (service role). Never import in client components.
 
+import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { isSupabaseConfigured } from "./config";
 
@@ -21,6 +22,7 @@ export interface ChecklistSaveRow {
   answers: unknown;
   selections: unknown;
   removed: unknown;
+  save_token: string | null;
   updated_at: string;
 }
 
