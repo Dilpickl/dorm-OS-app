@@ -45,7 +45,7 @@ const STEPS: { id: TutorialStepId; message: string }[] = [
   {
     id: "estimated-total",
     message:
-      "This estimated total is the sum of everything on your checklist. Items you mark as already owned are excluded.",
+      "This estimated total is the sum of everything on your checklist. Don't be worried if it looks like a large number at first; owned items quickly make the total go down.",
   },
   {
     id: "owned-checkbox",
