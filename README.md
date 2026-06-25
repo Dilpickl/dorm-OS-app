@@ -1,4 +1,4 @@
-뿯붿# Dorm Living OS
+Dorm Living OS
 
 A modern Next.js learning project that helps college students plan what to buy
 for their dorm. Answer a few onboarding questions and get a personalized,
